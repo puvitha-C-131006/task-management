@@ -52,35 +52,8 @@ export default function Register() {
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       const username = email.split('@')[0];
 
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user: {
-            firstName,
-            lastName,
-            username,
-            email,
-            password,
-            confirmPassword,
-            termsAccepted,
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        let errorMsg = 'Registration failed';
-        const errorText = await response.text();
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMsg = errorData.error || errorData.message || errorMsg;
-        } catch {
-          if (errorText) errorMsg = errorText;
-        }
-        throw new Error(errorMsg);
-      }
+      // Simulate backend registration delay
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       // Sign up successful - automatically log user in
       showToast('Registration successful! Creating account...', 'success');
