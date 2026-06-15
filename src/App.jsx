@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { HashRouter } from 'react-router-dom';
 import AppRoutes from './routes';
 import { FiCheckCircle, FiInfo, FiAlertTriangle, FiXCircle, FiX } from 'react-icons/fi';
+import { supabase } from './supabaseClient';
 
 const AppContext = createContext();
 
@@ -18,23 +19,14 @@ export default function App() {
 
   // --- LOCAL STORAGE HANDLING ---
   useEffect(() => {
-    // 1. Load User Session
-    const savedUser = localStorage.getItem('task_manager_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // 1. Supabase Auth Session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+    });
 
-    // 2. Load Tasks (Filter out any old mock tasks from local storage)
-    const savedTasks = localStorage.getItem('task_manager_tasks');
-    if (savedTasks) {
-      const parsedTasks = JSON.parse(savedTasks);
-      const cleanedTasks = parsedTasks.filter(t => !['task-1', 'task-2', 'task-3', 'task-4', 'task-5', 'task-6'].includes(t.id));
-      setTasksState(cleanedTasks);
-      localStorage.setItem('task_manager_tasks', JSON.stringify(cleanedTasks));
-    } else {
-      setTasksState([]);
-      localStorage.setItem('task_manager_tasks', JSON.stringify([]));
-    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
 
     // 3. Load Theme
     const savedTheme = localStorage.getItem('task_manager_theme');
@@ -48,36 +40,96 @@ export default function App() {
     }
 
     setLoading(false);
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  // Fetch tasks from backend
+  const fetchTasks = async () => {
+    if (!user) {
+      setTasksState([]);
+      return;
+    }
+    try {
+      const { data, error } = await supabase.from('tasks').select('*').eq('user_id', user.id);
+      if (error) throw error;
+      setTasksState(data || []);
+    } catch (error) {
+      console.error('Error fetching tasks:', error.message);
+      showToast('Failed to load tasks from server', 'error');
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchTasks();
+    } else {
+      setTasksState([]);
+    }
+  }, [user]);
 
   // --- ACTIONS ---
   
   // Set tasks with LocalStorage sync
   const setTasks = (newTasks) => {
     setTasksState(newTasks);
-    localStorage.setItem('task_manager_tasks', JSON.stringify(newTasks));
   };
 
-  const addTask = (task) => {
-    const newTask = {
-      ...task,
-      id: `task-${Date.now()}`,
-    };
-    const updatedTasks = [newTask, ...tasks];
-    setTasks(updatedTasks);
-    showToast('Task created successfully!', 'success');
+  const addTask = async (task) => {
+    try {
+      const { title, status, description, dueDate, priority, assignedUser, category, submissionUrl } = task;
+      const { error } = await supabase.from('tasks').insert([{ 
+        title, 
+        status: status || 'Pending', 
+        user_id: user.id,
+        description,
+        dueDate,
+        priority,
+        assignedUser,
+        category,
+        submissionUrl
+      }]);
+      if (error) throw error;
+      await fetchTasks();
+      showToast('Task created successfully!', 'success');
+    } catch (error) {
+      console.error('Error creating task:', error.message);
+      showToast('Failed to create task', 'error');
+    }
   };
 
-  const updateTask = (updatedTask) => {
-    const updatedTasks = tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t));
-    setTasks(updatedTasks);
-    showToast('Task updated successfully!', 'success');
+  const updateTask = async (updatedTask) => {
+    try {
+      const { title, status, description, dueDate, priority, assignedUser, category, submissionUrl } = updatedTask;
+      const { error } = await supabase.from('tasks').update({ 
+        title, 
+        status,
+        description,
+        dueDate,
+        priority,
+        assignedUser,
+        category,
+        submissionUrl
+      }).eq('id', updatedTask.id);
+      if (error) throw error;
+      await fetchTasks();
+      showToast('Task updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating task:', error.message);
+      showToast('Failed to update task', 'error');
+    }
   };
 
-  const deleteTask = (taskId) => {
-    const updatedTasks = tasks.filter((t) => t.id !== taskId);
-    setTasks(updatedTasks);
-    showToast('Task deleted successfully!', 'success');
+  const deleteTask = async (taskId) => {
+    try {
+      const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+      if (error) throw error;
+      await fetchTasks();
+      showToast('Task deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Error deleting task:', error.message);
+      showToast('Failed to delete task', 'error');
+    }
   };
 
   // Toast Notification System
@@ -107,19 +159,41 @@ export default function App() {
     }
   };
 
-  // Simulated Login
-  const login = (email, name) => {
-    const sessionUser = { email, name: name || email.split('@')[0], avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${name || email}` };
-    setUser(sessionUser);
-    localStorage.setItem('task_manager_user', JSON.stringify(sessionUser));
-    showToast(`Welcome back, ${sessionUser.name}!`, 'success');
+  // Supabase Login
+  const login = async (email, password) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      showToast(`Welcome back!`, 'success');
+    } catch (error) {
+      showToast(error.message || 'Login failed', 'error');
+    }
   };
 
-  // Simulated Logout
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('task_manager_user');
-    showToast('Logged out successfully.', 'info');
+  // Supabase Register
+  const register = async (email, password, fullName) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name: fullName } }
+      });
+      if (error) throw error;
+      showToast('Registration successful!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Registration failed', 'error');
+      throw error; // Re-throw so the form can catch it
+    }
+  };
+
+  // Supabase Logout
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      showToast('Logged out successfully.', 'info');
+    } catch (error) {
+      console.error('Logout error:', error.message);
+    }
   };
 
   return (
@@ -132,6 +206,7 @@ export default function App() {
         deleteTask,
         user,
         login,
+        register,
         logout,
         theme,
         toggleTheme,

@@ -22,7 +22,6 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { name: 'Dashboard', path: '/dashboard', icon: FiHome },
     { name: 'Tasks', path: '/tasks', icon: FiCheckSquare },
     { name: 'Calendar', path: '/calendar', icon: FiCalendar },
-    { name: 'Categories', path: '/categories', icon: FiFolder },
     { name: 'Priorities', path: '/priorities', icon: FiAlertCircle },
     { name: 'Analytics', path: '/analytics', icon: FiBarChart2 },
     { name: 'Settings', path: '/settings', icon: FiSettings },

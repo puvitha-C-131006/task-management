@@ -13,6 +13,7 @@ export default function TaskForm({ isOpen, onClose, task }) {
   const [status, setStatus] = useState('Pending');
   const [assignedUser, setAssignedUser] = useState('');
   const [category, setCategory] = useState('Work');
+  const [submissionUrl, setSubmissionUrl] = useState('');
   
   // Validation errors
   const [errors, setErrors] = useState({});
@@ -28,6 +29,7 @@ export default function TaskForm({ isOpen, onClose, task }) {
         setStatus(task.status || 'Pending');
         setAssignedUser(task.assignedUser || '');
         setCategory(task.category || 'Work');
+        setSubmissionUrl(task.submissionUrl || '');
       } else {
         // Clear forms for new tasks
         setTitle('');
@@ -40,6 +42,7 @@ export default function TaskForm({ isOpen, onClose, task }) {
         setStatus('Pending');
         setAssignedUser('');
         setCategory('Work');
+        setSubmissionUrl('');
       }
       setErrors({});
       document.body.style.overflow = 'hidden';
@@ -78,7 +81,8 @@ export default function TaskForm({ isOpen, onClose, task }) {
       priority,
       status,
       assignedUser: assignedUser.trim(),
-      category
+      category,
+      submissionUrl: submissionUrl.trim()
     };
 
     if (task) {
@@ -195,6 +199,20 @@ export default function TaskForm({ isOpen, onClose, task }) {
               onChange={(e) => setAssignedUser(e.target.value)}
               className="w-full px-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder-slate-400 dark:placeholder-slate-500"
               placeholder="e.g. Jane Doe"
+            />
+          </div>
+
+          {/* Submission URL */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Submission Link (URL)
+            </label>
+            <input
+              type="url"
+              value={submissionUrl}
+              onChange={(e) => setSubmissionUrl(e.target.value)}
+              className="w-full px-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder-slate-400 dark:placeholder-slate-500"
+              placeholder="e.g. https://my-landing-page.vercel.app"
             />
           </div>
 

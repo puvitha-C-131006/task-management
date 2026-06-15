@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../App';
-import { FiMail, FiLock, FiCheckCircle } from 'react-icons/fi';
+import { FiMail, FiLock, FiCheckCircle, FiUser } from 'react-icons/fi';
 
 export default function Login() {
   const { login } = useAppContext();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
@@ -14,6 +15,10 @@ export default function Login() {
 
     // Visual Validation
     const validationErrors = {};
+    if (!fullName.trim()) {
+      validationErrors.fullName = 'Full name is required';
+    }
+    
     if (!email) {
       validationErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
@@ -31,11 +36,7 @@ export default function Login() {
       return;
     }
 
-    // Capture name from prefix of email for simulated registration info
-    const inferredName = email.split('@')[0];
-    const capitalizedName = inferredName.charAt(0).toUpperCase() + inferredName.slice(1);
-    
-    login(email, capitalizedName);
+    login(email, password);
   };
 
   return (
@@ -63,6 +64,36 @@ export default function Login() {
         {/* Form */}
         <form onSubmit={handleLoginSubmit} className="space-y-6">
           
+          {/* Full Name field */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Full Name
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                <FiUser className="w-5 h-5" />
+              </span>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: null }));
+                }}
+                className={`w-full pl-11 pr-4 py-3 text-sm bg-slate-50 dark:bg-slate-950 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                  errors.fullName
+                    ? 'border-rose-300 dark:border-rose-800/80 focus:border-rose-500'
+                    : 'border-slate-200 dark:border-slate-800/80 focus:border-indigo-500'
+                }`}
+                placeholder="John Doe"
+                id="login-fullname"
+              />
+            </div>
+            {errors.fullName && (
+              <p className="text-xs text-rose-500 font-semibold">{errors.fullName}</p>
+            )}
+          </div>
+
           {/* Email field */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">

@@ -80,7 +80,27 @@ export default function TaskCard({ task, onEdit, onDelete }) {
             {task.title}
           </h3>
           <p className={`text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3 ${isCompleted ? 'text-slate-400/80 dark:text-slate-500/80' : ''}`}>
-            {task.description || 'No description provided.'}
+            {task.description ? (
+              task.description.split(/(\s+)/).map((part, idx) => {
+                if (part.startsWith('http://') || part.startsWith('https://')) {
+                  return (
+                    <a
+                      key={idx}
+                      href={part}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-500 hover:underline break-all"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {part}
+                    </a>
+                  );
+                }
+                return part;
+              })
+            ) : (
+              'No description provided.'
+            )}
           </p>
           {task.assignedUser && (
             <div className="flex items-center space-x-1.5 pt-1.5">
@@ -88,6 +108,20 @@ export default function TaskCard({ task, onEdit, onDelete }) {
               <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-lg">
                 @{task.assignedUser}
               </span>
+            </div>
+          )}
+          {task.submissionUrl && (
+            <div className="flex items-center space-x-1.5 pt-1.5">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Submission:</span>
+              <a
+                href={task.submissionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 px-2.5 py-0.5 rounded-lg hover:underline break-all"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {task.submissionUrl}
+              </a>
             </div>
           )}
         </div>

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../App';
-import { FiUser, FiMail, FiLock, FiCheckCircle } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiCheckCircle, FiEye, FiEyeOff } from 'react-icons/fi';
 
 export default function Register() {
-  const { login, showToast } = useAppContext();
-  const [name, setName] = useState('');
+  const { register, showToast } = useAppContext();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -17,8 +19,12 @@ export default function Register() {
 
     // Visual Validation
     const validationErrors = {};
-    if (!name.trim()) {
-      validationErrors.name = 'Full name is required';
+    if (!firstName.trim()) {
+      validationErrors.firstName = 'First name is required';
+    }
+
+    if (!lastName.trim()) {
+      validationErrors.lastName = 'Last name is required';
     }
 
     if (!email) {
@@ -47,17 +53,8 @@ export default function Register() {
     }
 
     try {
-      const nameParts = name.trim().split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-      const username = email.split('@')[0];
-
-      // Simulate backend registration delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Sign up successful - automatically log user in
-      showToast('Registration successful! Creating account...', 'success');
-      login(email, name);
+      const fullName = `${firstName.trim()} ${lastName.trim()}`;
+      await register(email, password, fullName);
     } catch (err) {
       setErrors({ form: err.message });
     }
@@ -94,10 +91,10 @@ export default function Register() {
             </div>
           )}
           
-          {/* Name field */}
+          {/* First Name field */}
           <div className="space-y-1">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Full Name
+              First Name
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
@@ -105,22 +102,52 @@ export default function Register() {
               </span>
               <input
                 type="text"
-                value={name}
+                value={firstName}
                 onChange={(e) => {
-                  setName(e.target.value);
-                  if (errors.name) setErrors((prev) => ({ ...prev, name: null }));
+                  setFirstName(e.target.value);
+                  if (errors.firstName) setErrors((prev) => ({ ...prev, firstName: null }));
                 }}
                 className={`w-full pl-11 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
-                  errors.name
+                  errors.firstName
                     ? 'border-rose-300 dark:border-rose-800/80 focus:border-rose-500'
                     : 'border-slate-200 dark:border-slate-800/80 focus:border-indigo-500'
                 }`}
-                placeholder="John Doe"
-                id="register-name"
+                placeholder="John"
+                id="register-firstname"
               />
             </div>
-            {errors.name && (
-              <p className="text-xs text-rose-500 font-semibold">{errors.name}</p>
+            {errors.firstName && (
+              <p className="text-xs text-rose-500 font-semibold">{errors.firstName}</p>
+            )}
+          </div>
+
+          {/* Last Name field */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Last Name
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                <FiUser className="w-5 h-5" />
+              </span>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  if (errors.lastName) setErrors((prev) => ({ ...prev, lastName: null }));
+                }}
+                className={`w-full pl-11 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                  errors.lastName
+                    ? 'border-rose-300 dark:border-rose-800/80 focus:border-rose-500'
+                    : 'border-slate-200 dark:border-slate-800/80 focus:border-indigo-500'
+                }`}
+                placeholder="Doe"
+                id="register-lastname"
+              />
+            </div>
+            {errors.lastName && (
+              <p className="text-xs text-rose-500 font-semibold">{errors.lastName}</p>
             )}
           </div>
 
@@ -164,13 +191,13 @@ export default function Register() {
                 <FiLock className="w-5 h-5" />
               </span>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (errors.password) setErrors((prev) => ({ ...prev, password: null }));
                 }}
-                className={`w-full pl-11 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                className={`w-full pl-11 pr-10 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
                   errors.password
                     ? 'border-rose-300 dark:border-rose-800/80 focus:border-rose-500'
                     : 'border-slate-200 dark:border-slate-800/80 focus:border-indigo-500'
@@ -178,6 +205,13 @@ export default function Register() {
                 placeholder="••••••••"
                 id="register-password"
               />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+              </button>
             </div>
             {errors.password && (
               <p className="text-xs text-rose-500 font-semibold">{errors.password}</p>
@@ -194,7 +228,7 @@ export default function Register() {
                 <FiLock className="w-5 h-5" />
               </span>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);
