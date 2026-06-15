@@ -19,10 +19,35 @@ export default function App() {
 
   // --- LOCAL STORAGE HANDLING ---
   useEffect(() => {
-    // 1. Supabase Auth Session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
-    });
+    const initializeAuth = async () => {
+      try {
+        const hash = window.location.hash;
+        if (hash.includes('access_token=') && hash.includes('type=recovery')) {
+          const tokenStartIndex = hash.indexOf('access_token=');
+          const tokenString = hash.substring(tokenStartIndex);
+          const params = new URLSearchParams(tokenString);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          if (accessToken && refreshToken) {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            if (error) throw error;
+            // Clean hash to avoid loop/multiple evaluation
+            window.location.hash = '#/reset-password';
+          }
+        }
+      } catch (err) {
+        console.error('Error setting recovery session:', err.message);
+      } finally {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user || null);
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
@@ -38,8 +63,6 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
-
-    setLoading(false);
 
     return () => subscription.unsubscribe();
   }, []);
