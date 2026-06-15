@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import User from '../models/User.js';
 
 const generateToken = (id) => {
@@ -71,5 +72,94 @@ export const loginUser = async (req, res) => {
     }
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// @desc    Forgot password - generate reset token & email/log link
+// @route   POST /api/auth/forgot-password
+// @access  Public
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found with this email');
+    }
+
+    // Generate token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken field
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Set expire (10 minutes)
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    // Create reset URL
+    const resetUrl = `${req.protocol}://${req.get('host')}/#/reset-password?token=${resetToken}`;
+    
+    // Log to console for testing/development
+    console.log(`=========================================`);
+    console.log(`PASSWORD RESET REQUEST FOR: ${email}`);
+    console.log(`Reset Token: ${resetToken}`);
+    console.log(`Reset URL: ${resetUrl}`);
+    console.log(`=========================================`);
+
+    res.json({
+      message: 'Password reset link generated and logged.',
+      resetToken, // return token directly for easy development testing
+      resetUrl,
+    });
+  } catch (error) {
+    res.status(res.statusCode === 200 ? 400 : res.statusCode || 400).json({ message: error.message });
+  }
+};
+
+// @desc    Reset password using token
+// @route   PUT /api/auth/reset-password/:token
+// @access  Public
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      res.status(400);
+      throw new Error('Password is required');
+    }
+
+    // Get hashed token
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      res.status(400);
+      throw new Error('Invalid or expired reset token');
+    }
+
+    // Set new password (it will be hashed by userSchema.pre('save') middleware)
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.json({ message: 'Password reset successful' });
+  } catch (error) {
+    res.status(res.statusCode === 200 ? 400 : res.statusCode || 400).json({ message: error.message });
   }
 };

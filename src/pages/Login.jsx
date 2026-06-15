@@ -130,9 +130,9 @@ export default function Login() {
               <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Password
               </label>
-              <a href="#" onClick={(e) => e.preventDefault()} className="text-xs font-bold text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              <Link to="/forgot-password" className="text-xs font-bold text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">

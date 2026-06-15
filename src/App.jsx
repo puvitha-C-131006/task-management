@@ -196,6 +196,32 @@ export default function App() {
     }
   };
 
+  // Supabase Forgot Password
+  const forgotPassword = async (email) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/#/reset-password`,
+      });
+      if (error) throw error;
+      showToast('Password reset link sent to your email!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Failed to send reset link', 'error');
+      throw error;
+    }
+  };
+
+  // Supabase Reset Password
+  const resetPassword = async (newPassword) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      showToast('Password reset successfully!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Failed to reset password', 'error');
+      throw error;
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -208,6 +234,8 @@ export default function App() {
         login,
         register,
         logout,
+        forgotPassword,
+        resetPassword,
         theme,
         toggleTheme,
         loading,

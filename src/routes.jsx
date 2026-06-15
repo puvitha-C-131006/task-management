@@ -12,6 +12,8 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import { FiHome, FiCheckSquare, FiCalendar, FiSettings } from 'react-icons/fi';
 
 // Layout wrapper for pages requiring authentication
@@ -98,6 +100,14 @@ export default function AppRoutes() {
       <Route 
         path="/register" 
         element={user ? <Navigate to="/dashboard" replace /> : <Register />} 
+      />
+      <Route 
+        path="/forgot-password" 
+        element={user ? <Navigate to="/dashboard" replace /> : <ForgotPassword />} 
+      />
+      <Route 
+        path="/reset-password" 
+        element={<ResetPassword />} 
       />
 
       {/* Protected Routes (Require Authentication) */}
